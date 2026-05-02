@@ -11,5 +11,10 @@ public sealed class RoleConfig : IEntityTypeConfiguration<Role>
         builder.ToTable("Roles");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Name).HasMaxLength(100).IsRequired();
+        
+        builder.HasMany(x => x.Permissions)
+            .WithOne(x => x.Role)
+            .HasForeignKey(x => x.RoleId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

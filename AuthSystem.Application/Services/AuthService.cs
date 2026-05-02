@@ -12,7 +12,8 @@ public sealed class AuthService(
     IPermissionReadService permissionReadService,
     INotificationService notificationService,
     IUserAuthenticationService userAuthenticationService,
-    IUserPasswordService userPasswordService) : IAuthService
+    IUserPasswordService userPasswordService,
+    IUserRegistrationService userRegistrationService) : IAuthService
 {
     public async Task<TokenPairResponse?> LoginAsync(LoginRequest request, CancellationToken cancellationToken = default)
     {
@@ -116,6 +117,50 @@ public sealed class AuthService(
         if (succeeded)
         {
             await auditService.RecordAsync("auth.change-password", userId, cancellationToken);
+        }
+
+        return succeeded;
+    }
+
+    public async Task<RegisterResponse?> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || 
+            string.IsNullOrWhiteSpace(request.Password) || 
+            request.Password != request.ConfirmPassword ||
+            string.IsNullOrWhiteSpace(request.FullName))
+        {
+            return null;
+        }
+
+        var result = await userRegistrationService.RegisterUserAsync(request.Email, request.Password, request.FullName, cancellationToken);
+        if (!result.Success)
+        {
+            return null;
+        }
+
+        await notificationService.SendEmailConfirmationAsync(request.Email, result.ConfirmationToken ?? string.Empty, cancellationToken);
+        await auditService.RecordAsync("auth.register", request.Email, cancellationToken);
+
+        return new RegisterResponse
+        {
+            UserId = result.UserId,
+            Email = request.Email,
+            Message = "Registration successful. Please confirm your email.",
+            RequiresEmailConfirmation = true
+        };
+    }
+
+    public async Task<bool> ConfirmEmailAsync(ConfirmEmailRequest request, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.ConfirmationToken))
+        {
+            return false;
+        }
+
+        var succeeded = await userRegistrationService.ConfirmEmailAsync(request.Email, request.ConfirmationToken, cancellationToken);
+        if (succeeded)
+        {
+            await auditService.RecordAsync("auth.confirm-email", request.Email, cancellationToken);
         }
 
         return succeeded;

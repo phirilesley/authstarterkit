@@ -11,6 +11,30 @@ namespace AuthSystem.API.Controllers;
 [Route("api/[controller]")]
 public sealed class AuthController(IAuthService authService) : ControllerBase
 {
+    [HttpPost("register")]
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
+    {
+        var result = await authService.RegisterAsync(request, cancellationToken);
+        if (result is null)
+        {
+            return BadRequest(new BaseResponse<object> { Success = false, Message = "Registration failed. Email may already be in use." });
+        }
+
+        return Ok(new BaseResponse<RegisterResponse> { Success = true, Message = "Registration successful.", Data = result });
+    }
+
+    [HttpPost("confirm-email")]
+    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request, CancellationToken cancellationToken)
+    {
+        var succeeded = await authService.ConfirmEmailAsync(request, cancellationToken);
+        if (!succeeded)
+        {
+            return BadRequest(new BaseResponse<object> { Success = false, Message = "Email confirmation failed." });
+        }
+
+        return Ok(new BaseResponse<object> { Success = true, Message = "Email confirmed successfully." });
+    }
+
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {

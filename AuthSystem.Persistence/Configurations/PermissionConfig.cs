@@ -11,5 +11,15 @@ public sealed class PermissionConfig : IEntityTypeConfiguration<Permission>
         builder.ToTable("Permissions");
         builder.HasKey(x => x.Id);
         builder.Property(x => x.Code).HasMaxLength(100).IsRequired();
+        builder.Property(x => x.Name).HasMaxLength(256).IsRequired();
+        builder.Property(x => x.Description).HasMaxLength(500);
+        builder.Property(x => x.IsActive).IsRequired().HasDefaultValue(true);
+        
+        builder.HasIndex(x => x.Code).IsUnique();
+        
+        builder.HasMany(x => x.RolePermissions)
+            .WithOne(x => x.Permission)
+            .HasForeignKey(x => x.PermissionId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

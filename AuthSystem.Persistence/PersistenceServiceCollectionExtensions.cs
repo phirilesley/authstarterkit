@@ -16,6 +16,7 @@ public static class PersistenceServiceCollectionExtensions
         }
 
         services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(connectionString));
+        services.AddHostedService<PermissionSeedHostedService>();
         return services;
     }
 }

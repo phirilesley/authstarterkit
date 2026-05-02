@@ -3,6 +3,7 @@ using AuthSystem.Application.Services;
 using AuthSystem.Identity;
 using AuthSystem.Notifications.Email;
 using AuthSystem.Persistence;
+using AuthSystem.Persistence.Services;
 using AuthSystem.Persistence.Stores;
 using AuthSystem.Security.Authorization;
 using AuthSystem.Security.Jwt;
@@ -24,13 +25,16 @@ public static class ServiceCollectionExtensions
         services.AddIdentityModule(configuration);
 
         services.AddScoped<IAuthService, AuthService>();
-        services.AddScoped<IUserService, UserService>();
-        services.AddScoped<IRoleService, RoleService>();
+        services.AddScoped<IUserService, IdentityUserService>();
+        services.AddScoped<IRoleService, IdentityRoleService>();
+        services.AddScoped<IUserRegistrationService, UserRegistrationServiceImpl>();
+        services.AddScoped<IPermissionService, global::AuthSystem.Persistence.Services.PermissionService>();
+        services.AddScoped<IRolePermissionService, RolePermissionService>();
 
         services.AddScoped<IAuditService, EfAuditStore>();
         services.AddScoped<ILoginTrackingService, EfLoginTrackingStore>();
         services.AddScoped<IRefreshTokenStore, EfRefreshTokenStore>();
-        services.AddSingleton<IPermissionReadService, InMemoryPermissionReadService>();
+        services.AddScoped<IPermissionReadService, EfPermissionReadService>();
         services.AddScoped<INotificationService, EmailSender>();
 
         var jwtSettings = new JwtSettings();
